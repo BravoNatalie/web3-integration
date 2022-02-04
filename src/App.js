@@ -1,26 +1,12 @@
 import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { w3 } from "./services/w3";
-import { AppBar, Typography, Button } from "@mui/material";
+import { Button } from "@mui/material";
 import "./App.css";
 import { ethers } from "ethers";
 import { ConnectWallet } from "./components/ConnectWallet";
+import { contractAddress } from "./config";
 const contractJson = require("./contract/NFT.json");
-
-const Header = styled(AppBar)`
-  padding: 1rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  & div {
-    display: flex;
-    align-items: center;
-    & Typography {
-      margin-left: 0.5rem;
-    }
-  }
-`;
 
 const Main = styled.div`
   display: flex;
@@ -49,7 +35,7 @@ function App() {
         setIsConnected(w3.isConnected()); // wait a little bit to check if metamask is connected because it takes a bit to load
       }, 300);
     }
-  }, [w3.accounts]);
+  }, []);
 
   w3.onAccountChanged = (account) => {
     setIsConnected(account !== null);
@@ -69,7 +55,7 @@ function App() {
         const provider = await w3.getProvider();
         const signer = await provider.getSigner();
         const _contract = new ethers.Contract(
-          process.env.REACT_APP_CONTRACT_ADD,
+          contractAddress,
           contractJson.abi,
           signer
         );
