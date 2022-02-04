@@ -1,25 +1,65 @@
 import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
 import { w3 } from "./services/w3";
-import { Button } from "@mui/material";
+import {
+  Button,
+  Tooltip,
+  Typography,
+  Fade,
+  Radio,
+  TextField,
+} from "@mui/material";
 import "./App.css";
 import { ethers } from "ethers";
 import { ConnectWallet } from "./components/ConnectWallet";
 import { contractAddress } from "./config";
 const contractJson = require("./contract/NFT.json");
 
+const connectWalletStyle = window.connectWalletStyle;
+const mintButtonStyle = window.mintButtonStyle;
+const inputColor = window.inputColor ? window.inputColor : "#9E9E9E";
+
 const Main = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 2rem;
-  padding: 0 2rem;
+  justify-content: center;
+`;
 
-  div {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    align-content: space-between;
+const RadioItem = styled(Radio)`
+  &:hover {
+    background: none;
+  }
+`;
+
+const WalletButton = styled(Button)`
+  height: 1.5rem;
+  border-radius: 0.8rem;
+
+  &:hover {
+    background-color: #f6f6f6;
+  }
+`;
+
+const MintingArea = styled.div`
+  display: flex;
+  padding: 1rem;
+
+  .MuiTextField-root {
+    margin-right: 1rem;
+
+    .MuiInputBase-root {
+      input {
+        height: 0.4375rem;
+        width: 4rem;
+      }
+    }
+  }
+
+  & .MuiOutlinedInput-root {
+    &.Mui-focused fieldset {
+      border-color: ${inputColor};
+    }
   }
 `;
 
@@ -27,6 +67,8 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [account, setAccount] = useState("");
   const [contract, setContract] = useState(null);
+  const [amount, setAmount] = useState(1);
+  const [inputError, setInputError] = useState(false);
   const tokenPrice = ethers.utils.parseEther("0.0001");
 
   useEffect(() => {
@@ -82,25 +124,72 @@ function App() {
     window.location.reload();
   }
 
+  async function disconnect() {
+    setConnected(false);
+  }
+
+  function handleInput(event) {
+    const value = event.target.value;
+    if (value <= 0 || value > 3500) {
+      setInputError(true);
+      return;
+    }
+    setInputError(false);
+    setAmount();
+  }
+
   return (
-    <div className="App">
-      <Main>
-        {connected ? (
-          <div>
-            <div>{account}</div>
+    <Main className="App">
+      {connected ? (
+        <>
+          <MintingArea>
+            <TextField
+              onChange={(e) => handleInput(e)}
+              value={amount}
+              error={inputError}
+              type="number"
+              placeholder="1"
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
             <Button
               variant="contained"
-              color="warning"
-              onClick={() => onMint(1)}
+              style={mintButtonStyle}
+              onClick={() => onMint(amount)}
             >
               Mint
             </Button>
-          </div>
-        ) : (
-          <ConnectWallet />
-        )}
-      </Main>
-    </div>
+          </MintingArea>
+          <Tooltip
+            title="Disconnect"
+            placement="bottom"
+            TransitionComponent={Fade}
+            TransitionProps={{ timeout: 600 }}
+          >
+            <WalletButton
+              sx={{
+                color: "text.secondary",
+              }}
+              onClick={() => disconnect()}
+            >
+              <RadioItem
+                size="small"
+                color="success"
+                checked={connected}
+                value={connected}
+                name="account"
+              />
+              <Typography variant="subtitle2" sx={{ paddingRight: "0.5rem" }}>
+                {account.slice(0, 5)}...{account.slice(-4)}
+              </Typography>
+            </WalletButton>
+          </Tooltip>
+        </>
+      ) : (
+        <ConnectWallet style={connectWalletStyle} />
+      )}
+    </Main>
   );
 }
 

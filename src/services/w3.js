@@ -4,6 +4,7 @@ export const w3 = {
   ethereum: null,
   provider: null,
   connectWallet: null,
+  disconnectWallet: null,
   onAccountChanged: function (account) {},
   onChainChanged: function (chainId) {},
   onDisconnect: function () {},
@@ -50,6 +51,7 @@ if (ethereum) {
       w3.onAccountChanged(null);
     }
   }
+
   w3.connectWallet = async () => {
     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
     accountsChanged(accounts);

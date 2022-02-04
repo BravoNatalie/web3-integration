@@ -1,8 +1,17 @@
+import styled from "@emotion/styled";
 import { Button } from "@mui/material";
 import { w3 } from "../../services/w3";
 import { mobileAndTabletCheck } from "../../services/utils";
 
-export const ConnectWallet = () => {
+const ConnectWalletBtn = styled(Button)`
+  transition: filter 0.2s;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
+`;
+
+export const ConnectWallet = ({ style }) => {
   function onClick() {
     if (!window.ethereum && mobileAndTabletCheck()) {
       window.open("https://metamask.app.link/dapp/localhost:3000");
@@ -28,9 +37,9 @@ export const ConnectWallet = () => {
           to install MetaMask.
         </div>
       )}
-      <Button variant="contained" color="warning" onClick={onClick}>
+      <ConnectWalletBtn variant="contained" onClick={onClick} style={style}>
         CONNECT WALLET
-      </Button>
+      </ConnectWalletBtn>
     </div>
   );
 };
