@@ -173,7 +173,7 @@ function App() {
       {connected ? (
         <>
           <Snackbar
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             open={snackContent !== ""}
             onClose={handleClose}
             message={snackContent}
