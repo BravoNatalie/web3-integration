@@ -8,7 +8,10 @@ import {
   Fade,
   Radio,
   TextField,
+  Snackbar,
+  IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import "./App.css";
 import { ethers } from "ethers";
 import { ConnectWallet } from "./components/ConnectWallet";
@@ -17,7 +20,14 @@ const contractJson = require("./contract/NFT.json");
 
 const connectWalletStyle = window.connectWalletStyle;
 const mintButtonStyle = window.mintButtonStyle;
+const snackStyle = window.snackStyle
+  ? window.snackStyle
+  : { backgroundColor: "#9E9E9E" };
+const inputStyle = window.inputStyle;
 const inputColor = window.inputColor ? window.inputColor : "#9E9E9E";
+const walletBackground = window.walletBackground
+  ? window.walletBackground
+  : "#f6f6f6";
 
 const Main = styled.div`
   display: flex;
@@ -37,7 +47,7 @@ const WalletButton = styled(Button)`
   border-radius: 0.8rem;
 
   &:hover {
-    background-color: #f6f6f6;
+    background-color: ${walletBackground};
   }
 `;
 
@@ -69,6 +79,8 @@ function App() {
   const [contract, setContract] = useState(null);
   const [amount, setAmount] = useState(1);
   const [inputError, setInputError] = useState(false);
+  const [snackContent, setSnackContent] = useState("");
+  const [mintMore, setMintMore] = useState(false);
   const tokenPrice = ethers.utils.parseEther("0.0001");
 
   useEffect(() => {
@@ -109,6 +121,11 @@ function App() {
   }
 
   async function onMint(amount) {
+    if (amount <= 0 || amount > 3500) {
+      setInputError(true);
+      setSnackContent("Not valid Amount");
+      return;
+    }
     if (!w3.isCorrectEthereumNetwork()) {
       await w3.connectToEthereum();
       return;
@@ -117,11 +134,12 @@ function App() {
       const tx = await contract.mintPublicSale(amount, {
         value: tokenPrice.mul(amount),
       });
+      setAmount(1);
+      setMintMore(true);
       await tx.wait();
     } catch (error) {
-      alert("Error - " + error.error.message);
+      setSnackContent("Error - " + error.error.message);
     }
-    window.location.reload();
   }
 
   async function disconnect() {
@@ -130,18 +148,40 @@ function App() {
 
   function handleInput(event) {
     const value = event.target.value;
-    if (value <= 0 || value > 3500) {
-      setInputError(true);
-      return;
-    }
-    setInputError(false);
-    setAmount();
+    setAmount(value);
   }
+
+  const handleClose = () => {
+    setSnackContent("");
+  };
+
+  const action = (
+    <>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
 
   return (
     <Main className="App">
       {connected ? (
         <>
+          <Snackbar
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            open={snackContent !== ""}
+            onClose={handleClose}
+            message={snackContent}
+            action={action}
+            ContentProps={{
+              sx: snackStyle,
+            }}
+          />
           <MintingArea>
             <TextField
               onChange={(e) => handleInput(e)}
@@ -149,16 +189,16 @@ function App() {
               error={inputError}
               type="number"
               placeholder="1"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              inputProps={{ style: { textAlign: "center" } }}
+              style={inputStyle}
             />
             <Button
               variant="contained"
               style={mintButtonStyle}
               onClick={() => onMint(amount)}
+              sx={{ padding: "0 1.8rem" }}
             >
-              Mint
+              {mintMore ? "MINT MORE" : "MINT"}
             </Button>
           </MintingArea>
           <Tooltip

@@ -6,6 +6,7 @@
   "dependencies": {
     "@emotion/react": "^11.7.1",
     "@emotion/styled": "^11.6.0",
+    "@mui/icons-material": "^5.3.1",
     "@mui/material": "^5.4.0",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
@@ -20,7 +21,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && yarn run build-dist",
+    "build-dist": "cp build/static/js/*.js dist && rm dist/main.js && mv dist/*.js dist/main.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
