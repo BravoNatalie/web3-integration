@@ -18,13 +18,15 @@ import { ConnectWallet } from "./components/ConnectWallet";
 import { contractAddress } from "./config";
 const contractJson = require("./contract/NFT.json");
 
+const maxSupply = window.maxSupply ? window.maxSupply : 10000;
 const connectWalletStyle = window.connectWalletStyle;
 const mintButtonStyle = window.mintButtonStyle;
+const totalSupplyStyle = window.totalSupplyStyle;
+const inputStyle = window.inputStyle;
+const inputColor = window.inputColor ? window.inputColor : "#9E9E9E";
 const snackStyle = window.snackStyle
   ? window.snackStyle
   : { backgroundColor: "#9E9E9E" };
-const inputStyle = window.inputStyle;
-const inputColor = window.inputColor ? window.inputColor : "#9E9E9E";
 const walletBackground = window.walletBackground
   ? window.walletBackground
   : "#f6f6f6";
@@ -49,6 +51,13 @@ const WalletButton = styled(Button)`
   &:hover {
     background-color: ${walletBackground};
   }
+`;
+
+const TotalMinted = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.2rem;
 `;
 
 const MintingArea = styled.div`
@@ -81,6 +90,9 @@ function App() {
   const [inputError, setInputError] = useState(false);
   const [snackContent, setSnackContent] = useState("");
   const [mintMore, setMintMore] = useState(false);
+  const [totalSupply, setTotalSupply] = useState(0);
+  const [isPresale, setIsPresale] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const tokenPrice = ethers.utils.parseEther("0.0001");
 
   useEffect(() => {
@@ -113,6 +125,12 @@ function App() {
           contractJson.abi,
           signer
         );
+        const mintedAmount = await _contract.totalSupply();
+        const presale = await _contract.presale();
+        const paused = await _contract.paused();
+        setIsPaused(paused);
+        setIsPresale(presale);
+        setTotalSupply(mintedAmount.toNumber());
         setContract(_contract);
       })();
     } else {
@@ -121,7 +139,7 @@ function App() {
   }
 
   async function onMint(amount) {
-    if (amount <= 0 || amount > 3500) {
+    if (amount <= 0 || amount + totalSupply > maxSupply) {
       setInputError(true);
       setSnackContent("Not valid Amount");
       return;
@@ -131,15 +149,31 @@ function App() {
       return;
     }
     try {
-      const tx = await contract.mintPublicSale(amount, {
-        value: tokenPrice.mul(amount),
-      });
+      const tx = isPresale
+        ? await presaleMint(amount)
+        : await publicMint(amount);
       setAmount(1);
       setMintMore(true);
       await tx.wait();
+      const mintedAmount = await contract.totalSupply();
+      setTotalSupply(mintedAmount.toNumber());
     } catch (error) {
-      setSnackContent("Error - " + error.error.message);
+      setSnackContent(
+        "Error: " + error.error.message.replace("execution reverted:", " ")
+      );
     }
+  }
+
+  async function publicMint(amount) {
+    return await contract.mintPublicSale(amount, {
+      value: tokenPrice.mul(amount),
+    });
+  }
+
+  async function presaleMint(amount) {
+    return await contract.mintPreSale(amount, {
+      value: tokenPrice.mul(amount),
+    });
   }
 
   async function disconnect() {
@@ -153,6 +187,8 @@ function App() {
 
   const handleClose = () => {
     setSnackContent("");
+    setAmount(1);
+    setInputError(false);
   };
 
   const action = (
@@ -182,6 +218,9 @@ function App() {
               sx: snackStyle,
             }}
           />
+          <TotalMinted style={totalSupplyStyle}>
+            {totalSupply} / {maxSupply}
+          </TotalMinted>
           <MintingArea>
             <TextField
               onChange={(e) => handleInput(e)}
@@ -195,8 +234,11 @@ function App() {
             <Button
               variant="contained"
               style={mintButtonStyle}
+              disabled={isPaused}
               onClick={() => onMint(amount)}
-              sx={{ padding: "0 1.8rem" }}
+              sx={{
+                padding: "0 1.8rem",
+              }}
             >
               {mintMore ? "MINT MORE" : "MINT"}
             </Button>
